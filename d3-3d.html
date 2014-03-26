@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+        <script src="https://www.jasondavies.com/maps/d3.geo.projection.min.js" charset="utf-8"></script>
+        <script src="http://d3js.org/topojson.v1.min.js"></script>
+        <script src="https://www.jasondavies.com/maps/rotate/d3.geo.zoom.js"></script>
+        <script src="json/world-110m.js"></script>
+        <script src='json/testJSON.js'></script>
+        <style>
+            #map {
+                width: 1000px;
+                margin: 0 auto;
+            }
+
+            #map h1 {
+                position: absolute;
+                width: 1000px;
+            }
+
+            .foreground {
+                fill: none;
+                stroke: #000;
+                stroke-width: 1px;
+                pointer-events: all;
+                cursor: -webkit-grab;
+                cursor: -moz-grab;
+            }
+
+            .foreground.zooming {
+                cursor: -webkit-grabbing;
+                cursor: -moz-grabbing;
+            }
+
+            .graticule {
+                fill: none;
+                stroke: #636B62;
+                stroke-width: .5px;
+                stroke-dasharray: 2, 2;
+            }
+            .feature {
+                fill: none;
+            }
+            .feature.first {
+                stroke: #777;
+            }
+            .feature.second {
+                stroke: #fabfab;
+            }
+            .land {
+                fill: #69D2E7;
+                stroke: none;
+            }
+
+            .mesh {
+                stroke: #50576A;
+                stroke-width: .5px;
+                fill: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div id='map'></div>
+        <script>
+            var width = 960, height = 1160;
+            //
+            // var projection = d3.geo.albers()
+            // .center([-35, 75])
+            // .rotate([4.4, 0])
+            // .parallels([50, 60])
+            // .scale(1200 * 5)
+            // .translate([width / 2, height / 2]);
+            //
+            // var path = d3.geo.path()
+            // .projection(projection)
+            // .pointRadius(2);
+
+            // var svg = d3.select("body").append("svg")
+            // .attr("width", width)
+            // .attr("height", height);
+
+            var svg = d3.selectAll("#map").data([orthographicProjection(width, height).scale(245).translate([width / 2, height * .56]), d3.geo.eisenlohr().precision(.1).clipExtent([[1, 1], [width - 1, height - 1]]).translate([width / 2, height / 2]).scale(75).rotate([0, -30])]).append("svg").attr("width", width).attr("height", height).each(function(projection) {
+                var path = d3.geo.path().projection(projection), svg = d3.select(this).call(drawMap, path, true);
+                svg.selectAll(".foreground").call(d3.geo.zoom().projection(projection).scaleExtent([projection.scale() * .7, projection.scale() * 10]).on("zoom.redraw", function() {
+                    d3.event.sourceEvent.preventDefault();
+                    svg.selectAll("path").attr("d", path);
+                }));
+                svg.selectAll("path").attr("d", path);
+                // loader.on("world." + ++id, function() { svg.selectAll("path").attr("d", path); });
+            });
+            // d3.selectAll("svg").insert("path", ".foreground").datum(topojson.feature(world, world.objects.land)).attr("class", "land");
+            // d3.selectAll("svg").insert("path", ".foreground").datum(topojson.mesh(world, world.objects.countries)).attr("class", "mesh");
+            d3.selectAll("svg").insert("path", ".foreground").datum(topojson.feature(world, world.objects.land)).attr("class", "land");
+            d3.selectAll("svg").insert("path", ".foreground").datum(topojson.mesh(world, world.objects.countries)).attr("class", "mesh");
+            // d3.selectAll("svg").insert("path", ".foreground").datum(topojson.feature(world, world.objects.land)).attr("class", "land");
+            // d3.selectAll("svg").insert("path", ".foreground").datum(topojson.mesh(world, world.objects.countries)).attr("class", "mesh");
+            var projections = [], width = 220, height = 220, format = d3.format(".1f");
+
+            rotationMap("γ", function(rotate) {
+                var x1 = d3.event.x - width / 2, y1 = height / 2 - d3.event.y;
+                return rotate[2] += (Math.atan2(y1, x1) - Math.atan2(y1 + d3.event.dy, x1 - d3.event.dx)) * degrees;
+            });
+            rotationMap("φ", function(rotate) {
+                return rotate[1] = -d3.event.y;
+            }, function(rotate) {
+                return {
+                    y : -rotate[1]
+                };
+            });
+            rotationMap("λ", function(rotate) {
+                return rotate[0] = d3.event.x;
+            }, function(rotate) {
+                return {
+                    x : rotate[0]
+                };
+            });
+
+            function rotationMap(symbol, update, origin) {
+                var projection = orthographicProjection(width, height).rotate([0, 0]), path = d3.geo.path().projection(projection);
+
+                projections.push(projection);
+
+                var projections_ = projections.slice();
+                var drag = d3.behavior.drag().on("drag", function() {
+                    for (var i = 0; i < projections_.length; ++i) {
+                        var projection = projections_[i], angle = rotate(projection.rotate());
+                        projection.rotate(angle.rotate);
+                    }
+                    d3.select("#rotations").selectAll("svg").each(function(d) {
+                        d3.select(this).selectAll("path").attr("d", d.path);
+                    });
+                });
+
+                if (origin)
+                    drag.origin(function() {
+                        return origin(projection.rotate());
+                    });
+
+                svg.selectAll(".foreground").call(drag);
+
+                function rotate(rotate) {
+                    var angle = update(rotate);
+                    return {
+                        angle : angle,
+                        rotate : rotate
+                    };
+                }
+
+            }
+
+            function drawMap(svg, path, mousePoint) {
+                // var projection = path.projection()
+                var projection = orthographicProjection(width, height);
+                console.log(projection)
+
+                svg.append("path").datum(d3.geo.graticule()).attr("class", "graticule").attr("d", path);
+
+                svg.append("path").datum({
+                    type : "Sphere"
+                }).attr("class", "foreground").attr("d", path).on("mousedown.grab", function() {
+                    var point;
+                    if (mousePoint)
+                        point = svg.insert("path", ".foreground").datum({
+                            type : "Point",
+                            coordinates : projection.invert(d3.mouse(this))
+                        }).attr("class", "point").attr("d", path);
+                    var path = d3.select(this).classed("zooming", true), w = d3.select(window).on("mouseup.grab", function() {
+                        path.classed("zooming", false);
+                        w.on("mouseup.grab", null);
+                        if (mousePoint)
+                            point.remove();
+                    });
+                });
+
+                svg.selectAll('.feature').data(json.features).enter().append('path').attr('class', function(d) {
+                    return 'feature ' + d.properties.name
+                }).attr('d', path);
+            }
+
+            function orthographicProjection(width, height) {
+                return d3.geo.orthographic().precision(.5).clipAngle(90).clipExtent([[1, 1], [width - 1, height - 1]]).translate([width / 2, height / 2]).scale(width / 2 - 10).rotate([0, -30]);
+            }
+
+            // d3.json('json/testJSON.json', function (error, json) {
+            // d3.json('https://www.jasondavies.com/maps/world-110m.json', function (error, json) {
+            // if(error) console.log(error)
+            // console.log(json);
+            // })
+        </script>
+    </body>
+</html>

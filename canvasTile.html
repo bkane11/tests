@@ -1,0 +1,276 @@
+    <title>OpenLayers Grayscale OSM Example</title>
+    <link rel="stylesheet" href="http://openlayers.org/dev//theme/default/style.css" type="text/css">
+    <script src="http://openlayers.org/dev//OpenLayers.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.0/jquery.min.js"></script>
+    <style type="text/css">
+        /**
+         * CSS Reset
+         * From Blueprint reset.css
+         * http://blueprintcss.googlecode.com
+         */
+        html, body, div, span, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, code, del, dfn, em, img, q, dl, dt, dd, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td {margin:0;padding:0;border:0;font-weight:inherit;font-style:inherit;font-size:100%;font-family:inherit;vertical-align:baseline;}
+        body {line-height:1.5;}
+        table {border-collapse:separate;border-spacing:0;}
+        caption, th, td {text-align:left;font-weight:normal;}
+        table, td, th {vertical-align:middle;}
+        blockquote:before, blockquote:after, q:before, q:after {content:"";}
+        blockquote, q {quotes:"" "";}
+        a img {border:none;}
+        
+        /**
+         * Basic Typography
+         */
+        body {
+            font-family: "Lucida Grande", Verdana, Geneva, Lucida, Arial, Helvetica, sans-serif;
+            font-size: 80%;
+            color: #222;
+            background: #fff;
+            margin: 1em 1.5em;
+        }
+        pre, code {
+            margin: 1.5em 0;
+            white-space: pre;
+        }
+        pre, code {
+            font: 1em 'andale mono', 'lucida console', monospace;
+            line-height:1.5;
+        }
+        a[href] {
+            color: #436976;
+            background-color: transparent;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #003a6b;
+            background-color: transparent;
+            font: 100% 'Lucida Grande', Verdana, Geneva, Lucida, Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding-top: 0.5em;
+        }
+        h1 {
+            font-size: 130%;
+            margin-bottom: 0.5em;
+            border-bottom: 1px solid #fcb100;
+        }
+        h2 {
+            font-size: 120%;
+            margin-bottom: 0.5em;
+            border-bottom: 1px solid #aaa;
+        }
+        h3 {
+            font-size: 110%;
+            margin-bottom: 0.5em;
+            text-decoration: underline;
+        }
+        h4 {
+            font-size: 100%;
+            font-weight: bold;
+        }
+        h5 {
+            font-size: 100%;
+            font-weight: bold;
+        }
+        h6 {
+            font-size: 80%;
+            font-weight: bold;
+        }
+        
+        .olControlAttribution {
+            bottom: 5px;
+        }
+        
+        /**
+         * Map Examples Specific
+         */
+        .smallmap {
+            width: 512px;
+            height: 256px;
+            border: 1px solid #ccc;
+        }
+        #tags {
+            display: none;
+        }
+        
+        #docs p {
+            margin-bottom: 0.5em;
+        }
+        /* mobile specific */
+        @media only screen and (max-width: 600px) {
+            body {
+                height           : 100%;
+                margin           : 0;
+                padding          : 0;
+                width            : 100%;
+            }
+            #map {
+                background : #7391ad;
+                width      : 100%;
+            }
+            #map {
+                border : 0;
+                height : 250px;
+            }
+            #title {
+                font-size   : 1.3em;
+                line-height : 2em;
+                text-indent : 1em;
+                margin      : 0;
+                padding     : 0;
+            }
+            #docs {
+                bottom     : 0;
+                padding    : 1em;
+            }
+            #shortdesc {
+                color      : #aaa;
+                font-size  : 0.8em;
+                padding    : 1em;
+                text-align : right;
+            }
+            #tags {
+                display : none;
+            }
+        }
+        @media only screen and (orientation: landscape) and (max-width: 600px) {
+            #shortdesc {
+               float: right;
+               width: 25%;
+            }
+            #map {
+                width: 70%;
+            }
+            #docs {
+                font-size: 12px;
+            }
+        }
+        body {
+            -webkit-text-size-adjust: none;
+        }
+
+    </style>
+    <script type="text/javascript">
+         var app = {};
+        var map, layer;
+        // var a = [];
+        function init() {
+            if (!OpenLayers.CANVAS_SUPPORTED) {
+                var unsupported = OpenLayers.Util.getElement('unsupported');
+                unsupported.innerHTML = 'Your browser does not support canvas, nothing to see here !';
+            }
+            // for(var i=0;i<208 ;i++){
+                // a.push(i);
+            // }
+                        ///////
+                // var tiles = new L.TileLayer.Canvas();
+                // tiles.drawTile = function (canvas, tile, zoom) {
+                    // var url = 'http://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/'+zoom+'/'+tile.y+'/'+tile.x;
+                    // var img = document.createElement('img');
+                    // img.src = url;
+                    // console.log(zoom,tile.x,tile.y, url);
+                    // var context = canvas.getContext('2d');
+                    // var imgd = context.getImageData(0, 0, canvas.width, canvas.height);
+                    // var pix = imgd.data;
+                    // // console.log(canvas,context,tile,imgd,pix);
+                    // for (var i = 0, n = imgd.data.length; i < n; i += 1) {
+                    // // for (var i = 0, n = imgd.data.length; i < n; i += 4) {
+                        // // console.log(imgd.data[i]);
+                        // if(imgd.data[i]>=240){
+                                // imgd.data[i]=255//Math.floor(Math.random() * 255) + 1;
+                                // imgd.data[i+1]=0//Math.floor(Math.random() * 255) + 1;
+                                // imgd.data[i+2]=0//Math.floor(Math.random() * 255) + 1;
+                                // imgd.data[i+3]=355//Math.floor(Math.random() * 255) + 1;
+                        // }else if(imgd.data[i]<208 && imgd.data[i]>150){
+                            // imgd.data[i]=0//Math.floor(Math.random() * 255) + 1;
+                            // imgd.data[i+1]=0//Math.floor(Math.random() * 255) + 1;
+                            // imgd.data[i+2]=0//Math.floor(Math.random() * 255) + 1;
+                            // imgd.data[i+3]=150//Math.floor(Math.random() * 255) + 1;
+                        // }else if(imgd.data[i]<240 && imgd.data[i]>=208){
+                            // imgd.data[i]=0//Math.floor(Math.random() * 255) + 1;
+                            // imgd.data[i+1]=0//Math.floor(Math.random() * 255) + 1;
+                            // imgd.data[i+2]=0//Math.floor(Math.random() * 255) + 1;
+                            // imgd.data[i+3]=255//Math.floor(Math.random() * 255) + 1;
+                        // }
+//                         
+                        // imgd.data[i]=159;
+                    // }
+                    // // context.putImageData(imgd, 0, 0);
+                    // context.drawImage(img,0,0);
+                    // console.log(context);
+//                     
+                    // // console.log(canvas,context,tile,imgd,pix);
+//                             
+                    // //paint tile
+                // }
+                
+            layer = new OpenLayers.Layer.OSM('Simple OSM Map', null, {
+                eventListeners: {
+                    tileloaded: function(evt) {
+                        var ctx = evt.tile.getCanvasContext();
+                            ctx.fillStyle = '#FFFFFF';
+                        if (ctx) {
+                            var imgd = ctx.getImageData(0, 0, evt.tile.size.w, evt.tile.size.h);
+                            app.imgd = imgd;
+                            var pix = imgd.data;
+                            app.pix=pix;
+                            // console.log(a.indexOf(pix[i]));
+        //console.log(pix[pix.length-2]);
+                            for (var i = 0, n = imgd.data.length; i < n; i += 4) {
+                                // console.log(imgd.data[i]);
+                                if(imgd.data[i]>=240){
+                                        imgd.data[i]=255//Math.floor(Math.random() * 255) + 1;
+                                        imgd.data[i+1]=0//Math.floor(Math.random() * 255) + 1;
+                                        imgd.data[i+2]=0//Math.floor(Math.random() * 255) + 1;
+                                        imgd.data[i+3]=355//Math.floor(Math.random() * 255) + 1;
+                                }else if(imgd.data[i]<208 && imgd.data[i]>150){
+                                    imgd.data[i]=0//Math.floor(Math.random() * 255) + 1;
+                                    imgd.data[i+1]=0//Math.floor(Math.random() * 255) + 1;
+                                    imgd.data[i+2]=0//Math.floor(Math.random() * 255) + 1;
+                                    imgd.data[i+3]=150//Math.floor(Math.random() * 255) + 1;
+                                }else if(imgd.data[i]<240 && imgd.data[i]>=208){
+                                    imgd.data[i]=0//Math.floor(Math.random() * 255) + 1;
+                                    imgd.data[i+1]=0//Math.floor(Math.random() * 255) + 1;
+                                    imgd.data[i+2]=0//Math.floor(Math.random() * 255) + 1;
+                                    imgd.data[i+3]=255//Math.floor(Math.random() * 255) + 1;
+                                }
+                            }
+                            ctx.putImageData(imgd, 0, 0);
+                            evt.tile.imgDiv.removeAttribute("crossorigin");
+                            evt.tile.imgDiv.src = ctx.canvas.toDataURL();
+                            app.evt = evt;
+                            app.ctx=ctx;
+                            
+                            
+                            
+                            // $(evt.tile.imgDiv).on("mouseover",function(){
+                                // this.style.opacity=.5;
+                            // }).on("mouseout", function(){
+                                // this.style.opacity=1;
+                            // });
+                        }
+                    }
+                }
+            }); 
+            map = new OpenLayers.Map('map', {
+                layers: [layer],
+                zoom: 3,
+                center: [-1081125, 6212801]
+            });
+        }
+    </script>
+    <body onLoad="init()">
+    <h1 id="title">Grayscale OSM Example</h1>
+
+    <div id="tags">
+        openstreetmap canvas grayscale light
+    </div>
+
+    <div id="shortdesc">Show an OSM Map in grayscale</div>
+
+    <div id="map"></div>
+
+    <div id="docs">
+        <p>This example shows an OSM layer where the tiles were
+        converted to grayscale
+        with <a href="http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html">canvas</a>.</p>
+        <p style="color:red;" id="unsupported"></p>
+    </div>
+        </body>

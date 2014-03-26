@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>three.js webgl - loaders - vrml loader</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <style>
+            body {
+                font-family: Monospace;
+                background-color: #000;
+                color: #fff;
+                margin: 0px;
+                overflow: hidden;
+            }
+            #info {
+                color: #fff;
+                position: absolute;
+                top: 10px;
+                width: 100%;
+                text-align: center;
+                z-index: 100;
+                display:block;
+            }
+            #info a, .button { color: #f00; font-weight: bold; text-decoration: underline; cursor: pointer }
+        </style>
+    </head>
+
+    <body>
+        <div id="info">
+            <a href="http://threejs.org" target="_blank">three.js</a> - vrml format loader test -
+        </div>
+
+        <script src="http://threejs.org/build/three.min.js"></script>
+        <script src="http://threejs.org/examples/js/controls/TrackballControls.js"></script>
+        <script src="js/VRMLLoader.js"></script>
+        <!-- <script src="http://threejs.org/examples/js/loaders/VRMLLoader.js"></script> -->
+
+        <script src="http://threejs.org/examples/js/Detector.js"></script>
+        <script src="http://threejs.org/examples/js/libs/stats.min.js"></script>
+        <script>
+
+            if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+            var container, stats;
+            var camera, controls, scene, renderer;
+            var cross;
+            var mouse = new THREE.Vector2();
+            var projector, raycaster, currentIntersected, elements;
+            
+            var WIDTH = window.innerWidth / window.innerHeight, 
+                    HEIGHT = 2;
+                    
+            var VIEW_ANGLE = 45;
+            var ASPECT = WIDTH / HEIGHT;
+            var NEAR = 1;
+            var FAR = 500;
+            
+            init();
+            animate();
+
+            function init() {
+
+                camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
+                camera.position.set(-21,19,-1)
+                // camera.position.set( 0, 75, 160 );
+                // camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.01, 1e10 );
+                // camera.position.z = 6;
+
+                controls = new THREE.TrackballControls( camera );
+                
+                controls.rotateSpeed = 1.0;
+                controls.zoomSpeed = 1.2;
+                controls.panSpeed = 0.8;
+                controls.noZoom = false;
+                controls.noPan = false;
+                controls.staticMoving = true;
+                controls.dynamicDampingFactor = 0.5;
+                controls.keys = [ 65, 83, 68 ];
+                controls.addEventListener( 'change', render );
+
+                scene = new THREE.Scene();
+                scene.add( camera );
+                
+                // interaction
+                projector = new THREE.Projector();
+                raycaster = new THREE.Raycaster();
+                raycaster.linePrecision = 3;
+
+                // light
+                var dirLight = new THREE.DirectionalLight( 0xffffff );
+                dirLight.position.set( 200, 200, 1000 ).normalize();
+
+                camera.add( dirLight );
+                camera.add( dirLight.target );
+                
+                // var light = new THREE.SpotLight( 0xffffff, 1.5 );
+                // light.position.set( 0, 500, 2000 );
+                // light.castShadow = true;
+                // light.shadowCameraNear = 200;
+                // light.shadowCameraFar = camera.far;
+                // light.shadowCameraFov = 50;
+                // light.shadowBias = -0.00022;
+                // light.shadowDarkness = 0.5;
+                // light.shadowMapWidth = 2048;
+                // light.shadowMapHeight = 2048;
+                // scene.add( light );
+
+                var loader = new THREE.VRMLLoader();
+                loader.addEventListener( 'load', function ( event ) {
+                    scene.add(event.content);
+                    addListeners(event.content);
+                    console.log(event);
+                } );
+                
+                // loader.load( "models/DelAmo/Benzene_1_ppb.wrl" );
+                // loader.load( "models/ARCF_West_Sections.wrl" );
+                // loader.load( "models/arcf_profiles_3d_printing.wrl" );
+                loader.load( "models/ARCF_Profiles.wrl" );
+
+                // renderer
+                renderer = new THREE.WebGLRenderer( { antialias: true } );
+                // renderer = new THREE.WebGLRenderer( { antialias: false } );
+                renderer.setClearColor( 0x000000, 1 );
+                renderer.setSize( window.innerWidth, window.innerHeight );
+
+                container = document.createElement( 'div' );
+                document.body.appendChild( container );
+                container.appendChild( renderer.domElement );
+
+                stats = new Stats();
+                stats.domElement.style.position = 'absolute';
+                stats.domElement.style.top = '0px';
+                container.appendChild( stats.domElement );
+                //
+                
+                document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+                window.addEventListener( 'resize', onWindowResize, false );
+            }
+            
+            function addListeners(content){
+                elements = content;
+            }
+            
+            function onDocumentMouseDown( event ) {
+                event.preventDefault();
+                console.log(event);
+                mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+                mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+            }
+
+            function onWindowResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize( window.innerWidth, window.innerHeight );
+                controls.handleResize();
+            }
+
+            function animate() {
+                requestAnimationFrame( animate );
+                controls.update();
+            }
+            
+            var vector,vector2;
+            function render() {
+                renderer.render( scene, camera );
+                stats.update();
+                
+                if(elements){
+                    vector = new THREE.Vector3( mouse.x, mouse.y, 1 );
+                    // projector.unprojectVector( vector, camera );
+                    scene.add( new THREE.ArrowHelper(vector.sub( camera.position ).normalize(), camera.position, 500, 0x012FFF, 10,10));
+                    raycaster.set( camera.position, vector.sub( camera.position ).normalize() );
+                    // vector = new THREE.Vector3( mouse.x, mouse.y, 500 );
+                    // vector2 = new THREE.Vector3( mouse.x, mouse.y, 0 );
+                    // raycaster.set( vector, vector2 );
+                    // projector.unprojectVector( vector2, camera );
+                    // raycaster.set( vector.sub( camera.position ).normalize(),camera.position );
+                    // scene.add( new THREE.ArrowHelper( vector2, vector.sub( camera.position ).normalize(), 10, 0x00000F));
+                    // scene.add( new THREE.ArrowHelper( vector, camera.position, 10, 0xFFF012));
+                    // scene.add( new THREE.ArrowHelper( camera.position, vector.sub( camera.position ).normalize(), 10, 0x0ffFFF));
+                    var intersects = raycaster.intersectObjects( elements.children, true);
+                    if(intersects.length>2)
+                        console.log(intersects);
+                    // for(var l in intersects){
+                       // var face = intersects[l].face;
+                       // var obj = intersects[l].object;
+                       // // intersects[l].face.color.setRGB(2,155,200);
+                       // // if(face.color.r!=1 && face.color.g!=1 && face.color.b!=1){
+                           // // console.log(face, obj);
+                           // obj.material.color.setRGB(face.color.r,face.color.g,face.color.b);
+                           // obj.material.needsUpdate = true;                       
+                       // // }
+                    // }
+                }         
+            }
+        </script>
+    </body>
+</html>

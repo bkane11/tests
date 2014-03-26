@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+    <head>
+        <title>404</title>
+        <meta name="description" content="404">
+
+        <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7/leaflet.css" />
+        <style>
+            .leaflet-popup-content{
+                text-align: center !important;
+                font-size: 16px;
+            }
+            .leaflet-popup-content span{
+                font-weight: bold;
+                font-size: 25px;
+            }
+            #map{
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100%;
+                width: 100%;
+            }
+        </style>
+        <script src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js"></script>
+
+    </head>
+    <body>
+        <div id="map"></div>
+        <script type="text/javascript">
+            var streets = new L.TileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'),//, {attribution : esriAttribution}),
+            map = new L.map('map', {
+                center : [37.55329, -122.33276],
+                zoom : 7,
+                layers : [streets],
+                dragging : false,
+                touchZoom : false,
+                scrollWheelZoom : false,
+                doubleClickZoom : false,
+                boxZoom : false,
+                tap : false,
+                closePopupOnClick : false
+            }),
+            popup=L.popup().setLatLng([37.45741810262938, -125.71655273437501])
+                .setContent("<p><span>Oops!</span><br />Looks like you missed...<br/><br/>There's nothing here.<br/>(page not found)</p>")
+                .openOn(map)
+        </script>
+    </body>
+</html>
